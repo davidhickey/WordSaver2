@@ -23,9 +23,9 @@
 </template>
 
 <script>
-import { useStore} from 'vuex';
+import { useStore } from 'vuex';
 import { useRouter } from "vue-router";
-import {computed} from 'vue';
+import { computed } from 'vue';
 import { auth } from '../firebaseConfig';
 
 export default {
@@ -46,7 +46,7 @@ export default {
       await store.dispatch('logOut');
       router.push('/');
   }
-    return {user,signOut};
+    return {user, signOut};
  }
   
   

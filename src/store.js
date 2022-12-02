@@ -1,11 +1,13 @@
 import { createStore } from 'vuex';
-import { auth } from './firebaseConfig';
+import { auth, db } from './firebaseConfig';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   updateProfile
 } from 'firebase/auth';
+import { collection, addDoc } from "firebase/firestore"; 
+
 
 
 const store = createStore({
@@ -34,6 +36,8 @@ const store = createStore({
       if (response) {
         const { user } = response;
         await updateProfile(user, {displayName: name});
+        const docRef = await addDoc(collection(db, "users"), { email, name});
+        console.log("Document written with ID: ", docRef.id);
         context.commit('SET_USER', user);
       } else {
           throw new Error('Unable to register user');

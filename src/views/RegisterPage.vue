@@ -95,6 +95,7 @@ export default {
         router.push('/');
       }
       catch (err) {
+        console.error(err);
         error.value = err.message
       }
     }
