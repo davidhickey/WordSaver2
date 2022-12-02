@@ -13,9 +13,7 @@ const firebaseConfig = {
   measurementId: process.env.VUE_APP_FB_MEASUREMENT_ID
 };
 
-console.log('firebaseConfig ', firebaseConfig);
-
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const auth = getAuth();
 
 export { app, auth }

@@ -14,10 +14,6 @@ const router = createRouter({
       path: "/sign-in",
       component: () => import("../views/SignInPage.vue"),
     },
-    {
-      path: "/feed",
-      component: () => import("../views/FeedPage.vue"),
-    },
   ],
 });
 export default router;
