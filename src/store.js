@@ -7,6 +7,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { collection, addDoc } from "firebase/firestore"; 
+import { transformDefs } from "./utils/helpers.js"
 
 
 
@@ -14,20 +15,32 @@ const store = createStore({
   state: {
     user: {
       loggedIn: false,
-      data: null
+      data: null,
+      authChecked: false,
+    },
+    wordData: {
+      word: '',
+      data: null,
     }
   },
   getters: {
     user(state){
-      return state.user
+      return state.user;
+    },
+    wordData(state){
+      return state.wordData;
     }
   },
   mutations: {
     SET_LOGGED_IN(state, value) {
       state.user.loggedIn = value;
+      state.user.authChecked = true;
     },
     SET_USER(state, data) {
       state.user.data = data;
+    },
+    SET_WORD_DATA(state, data) {
+      state.wordData = data;
     }
   },
   actions: {
@@ -58,12 +71,32 @@ const store = createStore({
     async fetchUser(context, user) {
       context.commit("SET_LOGGED_IN", user !== null);
       if (user) {
+        console.log('user is logged in');
         context.commit("SET_USER", {
           displayName: user.displayName,
           email: user.email
         });
       } else {
+        console.log('user not logged in');
         context.commit("SET_USER", null);
+      }
+    },
+    async getDef(context, word) {
+      console.log('getDef word is ', word);
+      try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+        if(!response.ok){
+          throw new Error('response.statusText');
+        }
+        const body = await response.json();
+        console.log('body ', body);
+
+        const definitions = transformDefs(body);
+        context.commit("SET_WORD_DATA", {word, data: definitions});
+        console.log(`dictionary response for ${word} is `, transformDefs(body));
+      }
+      catch(e) {
+        console.error(e);
       }
     }
   }

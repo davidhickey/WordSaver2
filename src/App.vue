@@ -7,12 +7,25 @@
 
 <script>
 import NavBar from "./components/NavBar.vue";
+import { useStore } from 'vuex';
+import { auth } from './firebaseConfig';
 
 export default {
   name: 'App',
   components: {
     NavBar
+  },
+  setup(){
+    console.log('App component');
+
+    const store = useStore();
+
+    auth.onAuthStateChanged(user => {
+      console.log('onAuthStateChange');
+      store.dispatch("fetchUser", user);
+    });
   }
+
 }
 </script>
 
