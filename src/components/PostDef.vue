@@ -8,6 +8,7 @@
       <strong>{{def.partOfSpeech}}</strong>
       <br>
       {{ def.definition }}
+      <button @click="submitCard(word, def)">Save Word and Definition</button>
     </div>
   </template>
   </div>
@@ -30,8 +31,20 @@
         return store.getters.wordData.data;
       });
 
+      const submitCard = (word, def) => {
+        const card = {
+          word,
+          definition: def.definition,
+          partOfSpeech: def.partOfSpeech,
+          example: def.example ?? "NA"
+        };
+        console.log('submit card ', card);
 
-      return { definitions, word }
+        store.dispatch('handleCardCreation', card);
+      }
+
+
+      return { definitions, word, submitCard }
     }
   }
 </script>
