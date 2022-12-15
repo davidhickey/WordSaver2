@@ -6,11 +6,8 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { collection, addDoc, doc, setDoc, getDoc } from "firebase/firestore"; 
-// import { doc, setDoc, getDoc } from "firebase/firestore"; 
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query } from "firebase/firestore"; 
 import { transformDefs } from "./utils/helpers.js"
-
-
 
 const store = createStore({
   state: {
@@ -22,7 +19,8 @@ const store = createStore({
     wordData: {
       word: '',
       data: null,
-    }
+    },
+    cards: []
   },
   getters: {
     user(state){
@@ -30,7 +28,10 @@ const store = createStore({
     },
     wordData(state){
       return state.wordData;
-    }
+    },
+    cards(state){
+      return state.cards;
+    },
   },
   mutations: {
     SET_LOGGED_IN(state, value) {
@@ -42,6 +43,9 @@ const store = createStore({
     },
     SET_WORD_DATA(state, data) {
       state.wordData = data;
+    },
+    SET_CARDS(state, data) {
+      state.cards = data;
     }
   },
   actions: {
@@ -183,6 +187,31 @@ const store = createStore({
         console.error(err);
       }
     },
+
+    async getCards(context){
+      try {
+        const cardListId = await context.dispatch("getCardListId");
+        if(cardListId){
+          const cardsArr = [];
+          const cardsRef = query(collection(db, "cardLists", cardListId, "cards"));
+          const querySnapshot = await getDocs(cardsRef);
+          querySnapshot.forEach((doc) => {
+            // doc.data() is never undefined for query doc snapshots
+            console.log(doc.id, " => ", doc.data());
+            cardsArr.push(doc.data());
+          });
+
+          context.commit('SET_CARDS', cardsArr);
+
+
+
+        }
+      }
+      catch(err){
+        console.error(err);
+      }
+  
+    }
   }
 })
 
