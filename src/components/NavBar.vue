@@ -12,7 +12,7 @@
     </div>
     <div class="container right">
       <div v-if="user.loggedIn">
-        Hello {{ user.data.displayName }}
+        Hello {{ user.data.name }}
       </div>
     </div>
   </div>

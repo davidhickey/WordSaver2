@@ -38,8 +38,6 @@
           partOfSpeech: def.partOfSpeech,
           example: def.example ?? "NA"
         };
-        console.log('submit card ', card);
-
         store.dispatch('handleCardCreation', card);
       }
 

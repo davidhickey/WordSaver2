@@ -6,7 +6,7 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, query } from "firebase/firestore"; 
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, deleteDoc } from "firebase/firestore"; 
 import { transformDefs } from "./utils/helpers.js"
 
 const store = createStore({
@@ -69,6 +69,7 @@ const store = createStore({
       }
     },
     async logIn(context, { email, password }){
+      console.log('logIn');
       const response = await signInWithEmailAndPassword(auth, email, password);
       if (response) {
           context.commit('SET_USER', response.user);
@@ -80,36 +81,50 @@ const store = createStore({
         await signOut(auth)
         context.commit('SET_USER', null);
     },
+    
     async fetchUser(context, user) {
-      context.commit("SET_LOGGED_IN", user !== null);
+      console.log('fetchUser');
       if (user) {
+        const userData = await context.dispatch("getUserData", user.uid);
+        context.commit("SET_USER", userData);
+        context.commit("SET_LOGGED_IN", user !== null);
         console.log('user is logged in', user);
-        context.commit("SET_USER", {
-          displayName: user.displayName,
-          email: user.email,
-          uid: user.uid,
-        });
-        console.log('context is ', context.state.user.data.uid);
       } else {
         console.log('user not logged in');
         context.commit("SET_USER", null);
       }
     },
 
+    async getUserData(context, uid){
+      try {
+        console.log('getUserData');
+        const userRef = doc(db, "users", uid );
+        const user = await getDoc(userRef);
+        if(user.exists()) {
+          console.log('User data is ', user.data());
+          const userData = user.data();
+          return userData;
+        }
+        else {
+          throw new Error(`user with id of ${uid} doesn't exist`);
+        }
+      }
+      catch(err){
+        console.error(err);
+      }
+    },
+
     //Dictionary API GET
     async getDef(context, word) {
       try {
-        console.log('getDef word is ', word);
+        console.log('getDef', word);
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         if(!response.ok){
           throw new Error('response.statusText');
         }
         const body = await response.json();
-        console.log('body ', body);
-
         const definitions = transformDefs(body);
         context.commit("SET_WORD_DATA", {word, data: definitions});
-        console.log(`dictionary response for ${word} is `, transformDefs(body));
       }
       catch(e) {
         console.error(e);
@@ -137,33 +152,14 @@ const store = createStore({
         console.error(err);
       }
     },
-    async getCardListId(context){
-      try {
-        console.log('getCardListId');
-        const uid = context.state.user.data.uid;
-        const userRef = doc(db, "users", uid );
-        const user = await getDoc(userRef);
-        if(user.exists()) {
-          console.log('User data is ', user.data());
-          const { cardListId } = user.data();
-          console.log('getCardListId - card list id is ', cardListId);
-          return cardListId;
-        }
-        else {
-          console.error('user does not exist');
-        }
-      }
-      catch(err){
-        console.error(err);
-      }
-    },
 
     async handleCardCreation(context, card) {
       //either creates cardList or gets cardList id
       //then creates a card
       try {
-      const cardListId = await context.dispatch("getCardListId") || await context.dispatch("createCardList");
-      context.dispatch('postCard', {cardListId, card});
+        console.log('handleCardCreation');
+        const cardListId = context.state.user.data.cardListId || await context.dispatch("createCardList");
+        context.dispatch('postCard', {cardListId, card});
       }
       catch(err){
         console.error(err);
@@ -172,16 +168,11 @@ const store = createStore({
 
     async postCard(context, {cardListId, card}) {
       try {
-      console.log('postCard', cardListId, card);
-      const cardsListRef = doc(db, "cardLists", cardListId, "cards", `${card.word}`);
-      await setDoc(cardsListRef, card,
-        // { 
-        //   word: "blue",
-        //   definition: "blue test2 def",
-        //   partOfSpeech: "blue pos",
-        //   example: "blue example"  
-        // }, 
-        { merge: true });
+        console.log('postCard', cardListId, card);
+        const cardsListRef = doc(db, "cardLists", cardListId, "cards", `${card.word}`);
+        await setDoc(cardsListRef, card, { merge: true });
+        //trigger getCards to get most recent list
+        context.dispatch('getCards');
       }
       catch(err){
         console.error(err);
@@ -190,27 +181,33 @@ const store = createStore({
 
     async getCards(context){
       try {
-        const cardListId = await context.dispatch("getCardListId");
+        console.log("getCards");
+        const cardListId = context.state.user.data.cardListId;
         if(cardListId){
           const cardsArr = [];
           const cardsRef = query(collection(db, "cardLists", cardListId, "cards"));
           const querySnapshot = await getDocs(cardsRef);
           querySnapshot.forEach((doc) => {
-            // doc.data() is never undefined for query doc snapshots
-            console.log(doc.id, " => ", doc.data());
             cardsArr.push(doc.data());
           });
-
           context.commit('SET_CARDS', cardsArr);
-
-
-
         }
       }
       catch(err){
         console.error(err);
       }
-  
+    },
+
+    async removeCard(context, word){
+      console.log("removeCard");
+      const cardListId = context.state.user.data.cardListId;
+      try {
+        await deleteDoc(doc(db, "cardLists", cardListId, "cards", `${word}`));
+        context.dispatch('getCards');
+      }
+      catch(err){
+        console.err(err);
+      }
     }
   }
 })

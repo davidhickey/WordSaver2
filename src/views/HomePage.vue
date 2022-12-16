@@ -52,7 +52,6 @@ export default {
   const router = useRouter();
 
   const user = computed(() => {
-    console.log('get user');
     return store.getters.user;
   });
 

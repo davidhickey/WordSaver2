@@ -6,6 +6,8 @@
         <strong>{{card.word}}</strong>
         <br>
         <i>{{card.partOfSpeech}}</i> - {{ card.definition }}
+
+        <button @click="removeWord(card.word)">Delete</button>
       </li>
     </ul>
   </div>
@@ -20,30 +22,18 @@
     setup(){
       const store = useStore();
 
+      console.log("render SavedWordsAndDef component");
       store.dispatch("getCards");
 
       const cards = computed(() => {
         return store.getters.cards;
       });
 
-      // const definitions = computed(() => {
-      //   return store.getters.wordData.data;
-      // });
+      const removeWord = (word) => {
+        store.dispatch("removeCard", word);
+      }
 
-      // const submitCard = (word, def) => {
-      //   const card = {
-      //     word,
-      //     definition: def.definition,
-      //     partOfSpeech: def.partOfSpeech,
-      //     example: def.example ?? "NA"
-      //   };
-      //   console.log('submit card ', card);
-
-      //   store.dispatch('handleCardCreation', card);
-      // }
-
-
-      return { cards }
+      return { cards, removeWord }
     }
   }
 </script>
